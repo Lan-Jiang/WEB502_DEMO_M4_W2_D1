@@ -1,5 +1,7 @@
 var express = require('express');
+const req = require('express/lib/request');
 var passport = require('passport');
+var Strategy = require('passport-local');
 
 var db = require('./db');
 
@@ -9,14 +11,28 @@ var db = require('./db');
 // The local strategy requires a `verify` function which receives the credentials
 // (`username` and `password`) submitted by the user.
 passport.use(new Strategy(
-
+  function(username, password, cb) {
+    db.users.findByUsername(username, function(err, user){
+      if (err) {return cb(err);}
+      if (!user) { return cb(null, false);}
+      if (user.password != pasword) { return cb (null, false);}
+      return cb(null, user);
+    });
   }));
 
 
 // Configure Passport authenticated session persistence.
 // Serialize and deserialize users
+passport.serializeUser(function(user, cb) {
+  cb(null, user.id);
+})
 
-
+passport.deserializeUser(function(id, cb) {
+  db.users.findById(id, function(err, user) {
+    if (err) {return cb(err);}
+    return cb(null, user);
+  })
+})
 
 // Create a new Express application.
 var app = express();
@@ -37,6 +53,31 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Define routes.
+app.get('/',
+function(reg, res) {
+  res.render('home', {
+    user:req.user
+  });
+});
 
+app.get('/home',
+function(reg, res) {
+  res.render('home', {user:req.user });
+});
+
+app.get('/login', 
+  function(req, res) {
+    res.render('login');
+});
+app.post('/login',
+passport.authenticate('local', { failureRedirect: '/login'
+}),
+function(req, res){
+  res.redirect('/');
+});
+app.get('/logout', function(req, res) {
+  req.logout();
+  res.redirect('/');
+})
 
 app.listen(3000);
