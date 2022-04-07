@@ -12,27 +12,28 @@ var db = require('./db');
 // (`username` and `password`) submitted by the user.
 passport.use(new Strategy(
   function(username, password, cb) {
-    db.users.findByUsername(username, function(err, user){
+    db.users.findByUsername(username, function(err,user) {
       if (err) {return cb(err);}
-      if (!user) { return cb(null, false);}
-      if (user.password != password) { return cb (null, false);}
-      return cb(null, user);
-    });
-  }));
+      if (!user) {return cb(null, false);}
+      if (user.password != password) {return cb(null,false);}
+      return cb(null,user);
+    })
+  }
+));
 
 
 // Configure Passport authenticated session persistence.
 // Serialize and deserialize users
-passport.serializeUser(function(user, cb) {
-  cb(null, user.id);
-})
+passport.serializeUser(function(user,cb) {
+  cb(null, user.id)
+});
 
-passport.deserializeUser(function(id, cb) {
-  db.users.findById(id, function(err, user) {
-    if (err) {return cb(err);}
-    return cb(null, user);
+passport.deserializeUser(function(id,cb) {
+  db.users.findById(id, function(err,user) {
+    if(err) {return cb(err);}
+    cb(null,user);
   })
-})
+});
 
 // Create a new Express application.
 var app = express();
@@ -54,30 +55,49 @@ app.use(passport.session());
 
 // Define routes.
 app.get('/',
-function(reg, res) {
-  res.render('home', {
-    user:req.user
-  });
-});
+  function(req,res) {
+    res.render('home', {
+      user:req.user
+    })
+  })
 
 app.get('/home',
-function(reg, res) {
-  res.render('home', {user:req.user });
-});
-
-app.get('/login', 
-  function(req, res) {
-    res.render('login');
-});
+    function(req,res) {
+      res.render('home',{user: req.user});
+    });
+app.get('/login',
+    function(req,res) {
+      res.render('login');
+    });
 app.post('/login',
-passport.authenticate('local', { failureRedirect: '/login'
-}),
-function(req, res){
-  res.redirect('/');
-});
-app.get('/logout', function(req, res) {
-  req.logout();
-  res.redirect('/');
-})
-
+    passport.authenticate('local', { failureRedirect: '/login'}),
+    function(req,res) {
+      res.redirect('/');
+    });
+app.get('/logout',
+  function(req,res) {
+    req.logout();
+    res.redirect('/');
+  });
+  
 app.listen(3000);
+
+// add cookies
+var cookieSession = require('cookie-session')
+var express = require('express')
+
+var app = express()
+
+app.use(cookieSession({
+  name: 'session',
+  value: 'hssiishghg',
+  secure:false,
+  keys: [0],
+
+  // Cookie Options
+  maxAge: 60 * 1000 // 24 hours
+}));
+ 
+
+
+
